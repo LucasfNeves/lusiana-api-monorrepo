@@ -1,0 +1,9 @@
+allowBuilds:
+  '@prisma/engines': false
+  '@swc/core': false
+  cpu-features: false
+  esbuild: false
+  prisma: false
+  protobufjs: false
+  ssh2: false
+  unrs-resolver: true

@@ -1,0 +1,11 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// Um banco só, com um schema por módulo; um módulo nunca lê o schema de outro.
+// Com `schemas`, todo modelo e todo enum precisa de @@schema.
+datasource db {
+  provider = "postgresql"
+  schemas  = ["auth"]
+}
