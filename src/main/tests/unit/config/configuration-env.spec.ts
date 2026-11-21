@@ -18,6 +18,18 @@ describe('configurationEnv', () => {
     vi.stubEnv('POSTGRES_DB', 'lusiana');
     vi.stubEnv('POSTGRES_PORT', '5499');
     vi.stubEnv('CORS_ORIGIN', 'https://loja.lusiana.com.br');
+    vi.stubEnv(
+      'BETTER_AUTH_SECRET',
+      'better-auth-test-secret-0123456789abcdef',
+    );
+    vi.stubEnv('BETTER_AUTH_URL', 'https://api.lusiana.com.br');
+    vi.stubEnv('PASSWORD_PEPPER', 'better-auth-test-pepper-0123456789abcdef');
+    vi.stubEnv('GOOGLE_ENABLE', 'true');
+    vi.stubEnv(
+      'GOOGLE_CLIENT_ID',
+      'google-client-id.apps.googleusercontent.com',
+    );
+    vi.stubEnv('GOOGLE_CLIENT_SECRET', 'google-client-secret');
 
     const configuration = configurationEnv();
 
@@ -34,18 +46,66 @@ describe('configurationEnv', () => {
         port: 5499,
       },
       http: {
-        corsOrigin: 'https://loja.lusiana.com.br',
+        corsOrigins: ['https://loja.lusiana.com.br'],
+      },
+      auth: {
+        secret: 'better-auth-test-secret-0123456789abcdef',
+        url: 'https://api.lusiana.com.br',
+        passwordPepper: 'better-auth-test-pepper-0123456789abcdef',
+        google: {
+          enabled: true,
+          clientId: 'google-client-id.apps.googleusercontent.com',
+          clientSecret: 'google-client-secret',
+        },
       },
     });
   });
 
-  it('should default the app port to 3003 and the database port to 5435 when they are unset', () => {
+  it.each([
+    { case: 'false', googleEnable: 'false' },
+    { case: 'unset', googleEnable: undefined },
+  ])(
+    'should disable Google with empty credentials when GOOGLE_ENABLE is $case',
+    ({ googleEnable }) => {
+      vi.stubEnv('GOOGLE_ENABLE', googleEnable);
+      vi.stubEnv('GOOGLE_CLIENT_ID', undefined);
+      vi.stubEnv('GOOGLE_CLIENT_SECRET', undefined);
+
+      const configuration = configurationEnv();
+
+      expect(configuration.auth.google).toEqual({
+        enabled: false,
+        clientId: '',
+        clientSecret: '',
+      });
+    },
+  );
+
+  it('should default the app port to 3000 and the database port to 5435 when they are unset', () => {
     vi.stubEnv('PORT', undefined);
     vi.stubEnv('POSTGRES_PORT', undefined);
 
     const configuration = configurationEnv();
 
-    expect(configuration.app.port).toBe(3003);
+    expect(configuration.app.port).toBe(3000);
     expect(configuration.database.port).toBe(5435);
   });
+
+  it.each([
+    {
+      case: 'several origins with spaces and an empty entry',
+      corsOrigin: ' https://loja.lusiana.com.br , ,http://localhost:3000',
+      expected: ['https://loja.lusiana.com.br', 'http://localhost:3000'],
+    },
+    { case: 'an unset variable', corsOrigin: undefined, expected: [] },
+  ])(
+    'should split CORS_ORIGIN into trimmed origins given $case',
+    ({ corsOrigin, expected }) => {
+      vi.stubEnv('CORS_ORIGIN', corsOrigin);
+
+      const configuration = configurationEnv();
+
+      expect(configuration.http.corsOrigins).toEqual(expected);
+    },
+  );
 });

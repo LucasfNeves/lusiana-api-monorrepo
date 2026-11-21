@@ -12,14 +12,8 @@ async function bootstrap() {
 
   app.use(helmet());
 
-  const corsOrigin = configService
-    .getOrThrow<string>('http.corsOrigin')
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-
   app.enableCors({
-    origin: corsOrigin,
+    origin: configService.getOrThrow<string[]>('http.corsOrigins'),
     credentials: true,
   });
 

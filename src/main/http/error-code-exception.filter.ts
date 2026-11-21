@@ -62,9 +62,7 @@ export class ErrorCodeExceptionFilter implements ExceptionFilter {
     const body = this.toBody(exception, request);
 
     if (body.statusCode >= FIRST_SERVER_ERROR_STATUS) {
-      this.logger.error(
-        exception instanceof Error ? exception.stack : exception,
-      );
+      this.logger.error(this.toLogEntry(exception));
       this.errorReporter.report(exception);
     }
 
@@ -145,5 +143,14 @@ export class ErrorCodeExceptionFilter implements ExceptionFilter {
       message: typeof message === 'string' ? message : exception.message,
       details: [],
     };
+  }
+
+  // O BetterAuthError chega com o stack vazio; sem nome e mensagem, o log fica em branco.
+  private toLogEntry(exception: unknown): unknown {
+    if (!(exception instanceof Error)) {
+      return exception;
+    }
+
+    return exception.stack || `${exception.name}: ${exception.message}`;
   }
 }

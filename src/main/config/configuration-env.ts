@@ -1,6 +1,6 @@
 export default () => ({
   app: {
-    port: parseInt(process.env.PORT ?? '3003', 10),
+    port: parseInt(process.env.PORT ?? '3000', 10),
     env: process.env.NODE_ENV,
   },
   database: {
@@ -11,6 +11,19 @@ export default () => ({
     port: parseInt(process.env.POSTGRES_PORT ?? '5435', 10),
   },
   http: {
-    corsOrigin: process.env.CORS_ORIGIN,
+    corsOrigins: (process.env.CORS_ORIGIN ?? '')
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  },
+  auth: {
+    secret: process.env.BETTER_AUTH_SECRET,
+    url: process.env.BETTER_AUTH_URL,
+    passwordPepper: process.env.PASSWORD_PEPPER,
+    google: {
+      enabled: process.env.GOOGLE_ENABLE === 'true',
+      clientId: process.env.GOOGLE_CLIENT_ID ?? '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+    },
   },
 });

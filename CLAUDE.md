@@ -15,7 +15,7 @@ This file is the source of truth for how code is written here. Before writing, r
 - Errors that answer 5xx are reported to Sentry (`@sentry/nestjs`), behind the `ErrorReporter` port. `src/main/instrument.ts` starts the SDK and is the first import of `main.ts`. Tracing and profiling are off.
 - Persistence is Prisma 7 with `@prisma/adapter-pg` and `prisma.config.ts`. The client is generated into `src/generated/prisma`, which is committed and ignored by lint and by Prettier (`.prettierignore`). The datasource lists one PostgreSQL schema per module (`schemas = [...]`), and every model and enum carries `@@schema(...)`: with `schemas` set, a model without it fails `prisma validate` (checked 2026-11-20). Multi-schema is GA since Prisma 6.13.
 - ESLint (`eslint.config.mjs`) runs `recommendedTypeChecked` with `--max-warnings=0`, so every `warn` rule acts as an error. `no-explicit-any` and `no-console` are on. `no-unnecessary-condition` is on: a condition the types say is always true or always false fails lint. `strict-boolean-expressions` is on for numbers: a number used as a condition fails lint, because `0` would read as "absent"; compare explicitly. Strings, nullable strings, nullable objects and nullable booleans stay allowed. Prettier (`.prettierrc`) is enforced at commit time: the pre-commit hook runs `lint-staged` (`prettier --write` on staged `src/**/*.ts`), then `pnpm validate`; commitlint checks commit messages.
-- Local ports: the API listens on 3003 and Postgres on 5435, so this repo runs next to the others (`lusiana-estoque` on 3001 and 5433, `lusiana-search` on 3002, the front on 3000, other Postgres instances on 5432 to 5434).
+- Local ports: the API listens on 3000 and Postgres on 5435, so this repo runs next to the others (`lusiana-estoque` on 3001 and 5433, `lusiana-search` on 3002, other Postgres instances on 5432 to 5434). Lucas moved the API from 3003 to 3000 on 2026-11-20, so the Google OAuth client points at `http://localhost:3000/api/auth/callback/google`; the front, which used 3000, needs another port.
 
 ## Commands
 
@@ -67,7 +67,7 @@ src/
     domain/                    entities/, value-objects/, errors/, constants/, types/, services/
     application/               use-cases/, ports/ (each port with its Symbol), types/
     interface-adapters/        controllers/ (with the Validate* classes), presenters/, gateways/
-    frameworks-drivers/        what only configures a library: Better Auth config, SDK clients
+    frameworks-drivers/        what only configures a library: Better Auth config and middleware, SDK clients
     integration-events/        the contracts this module publishes to the others
     tests/                     unit/, integration/, arch/
     <module>.module.ts         the Nest module: registers controllers and providers, exports only the public interface
@@ -178,7 +178,7 @@ Controllers live inside their module, in `interface-adapters/controllers/` (deci
 - **`interface` only for ports.** Everything else is a `type`.
 - **Constants** are UPPER_SNAKE. A limit used by one file stays in that file; a shared one goes in the module's `constants/`.
 - **Classes.** Private members carry no prefix. A function outside a class that is not exported carries the `_` prefix. A helper only one class uses is a private method of that class. Injected dependencies are `private readonly`. Public methods declare their return type.
-- **Names.** Suffixes: `*UseCase`, `*Entity`, `*VO`, `*Error`, `*Translator`, `Prisma*Repository`, `Prisma*Dao`, `*Adapter`, `*Request` / `*Query` / `*Response`, `*Snapshot`, `*Reference`, `*Props`, `Validate*` (prefix), `*Controller`, `*Module`. Files are kebab-case `<name>.<kind>.ts`, kind one of `usecase`, `entity`, `vo`, `validator`, `validate`, `controller`, `module`, `repository`, `dao`, `adapter`, `translator`, `filter`, `exception`, `interface`, `config`, `const`, `types`, `presenter`, `service`, `spec`. A variable is named after the thing it holds.
+- **Names.** Suffixes: `*UseCase`, `*Entity`, `*VO`, `*Error`, `*Translator`, `Prisma*Repository`, `Prisma*Dao`, `*Adapter`, `*Request` / `*Query` / `*Response`, `*Snapshot`, `*Reference`, `*Props`, `Validate*` (prefix), `*Controller`, `*Middleware`, `*Module`. Files are kebab-case `<name>.<kind>.ts`, kind one of `usecase`, `entity`, `vo`, `validator`, `validate`, `controller`, `middleware`, `module`, `repository`, `dao`, `adapter`, `translator`, `filter`, `exception`, `interface`, `config`, `const`, `types`, `presenter`, `service`, `spec`. A variable is named after the thing it holds.
 - **Clean Code is the reference** (Robert C. Martin) for names, functions and comments. Functions do one thing at one level of abstraction; a function that coordinates steps reads as the list of those steps. Order members by the Stepdown Rule: a caller above what it calls, in the order it calls them.
 - **Abstractions.** A new class, port or collaborator with only one consumer gets rejected, even if it removes lines. Count consumers before proposing one.
 
@@ -197,7 +197,9 @@ Controllers live inside their module, in `interface-adapters/controllers/` (deci
 
 ## Known deviations — do not copy
 
-None yet. Better Auth brings two when it lands (see the guide in the vault): its configuration reads `process.env` directly, like `SENTRY_DSN`, and its `/api/auth/*` routes bypass `ValidationPipe` and `ErrorCodeExceptionFilter`.
+- **Better Auth routes.** `AuthenticationModule` applies `BetterAuthMiddleware` (`frameworks-drivers/better-auth/better-auth.middleware.ts`, a wrapper around `toNodeHandler` from `better-auth/node` that never calls `next()`) to `api/auth/*path`, so these routes run before guards, skip `ValidationPipe`, so these routes skip `ValidationPipe`, and their 4xx answers keep Better Auth's own shape (`{ message, code }`). A 5xx thrown there still reaches `ErrorCodeExceptionFilter`. No `@thallesp/nestjs-better-auth`: removed on 2026-11-20 in favor of this middleware. Nest's body parser stays on: `better-call` re-reads an already parsed `req.body` (checked in 1.4.6).
+
+The configuration does not read `process.env`: `better-auth.config.ts` exports `createAuth(prisma, props)`, and the `BETTER_AUTH` provider of `AuthenticationModule` calls it with the `PrismaService` and values from `ConfigService`.
 
 ## Git
 

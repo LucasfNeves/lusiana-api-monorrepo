@@ -340,6 +340,19 @@ describe('ErrorCodeExceptionFilter', () => {
     expect(errorReporter.reported[0]).toBe(exception);
   });
 
+  it('should log the name and message of an error whose stack is empty', () => {
+    const exception = new Error('Prisma schema mismatch');
+    exception.name = 'BetterAuthError';
+    exception.stack = '';
+
+    sut.catch(exception, host);
+
+    expect(loggerError).toHaveBeenCalledExactlyOnceWith(
+      'BetterAuthError: Prisma schema mismatch',
+    );
+    expect(errorReporter.reported).toEqual([exception]);
+  });
+
   it('should log and report a thrown value that is not an Error', () => {
     sut.catch('boom', host);
 

@@ -1,6 +1,7 @@
 import { Module, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_PIPE } from '@nestjs/core';
+import { AuthenticationModule } from '@/modules/authentication/authentication.module.js';
 import { SharedModule } from '@/shared/shared.module.js';
 import { CONFIG_MODULE_OPTIONS } from './config/config-module-options.js';
 import { ErrorCodeExceptionFilter } from './http/error-code-exception.filter.js';
@@ -11,7 +12,11 @@ import {
 import { toValidationFailedException } from './http/validation-failed.exception.js';
 
 @Module({
-  imports: [ConfigModule.forRoot(CONFIG_MODULE_OPTIONS), SharedModule],
+  imports: [
+    ConfigModule.forRoot(CONFIG_MODULE_OPTIONS),
+    SharedModule,
+    AuthenticationModule,
+  ],
   providers: [
     {
       provide: APP_PIPE,

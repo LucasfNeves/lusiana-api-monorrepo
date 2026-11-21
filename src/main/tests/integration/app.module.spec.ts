@@ -15,6 +15,10 @@ beforeAll(async () => {
   vi.stubEnv('POSTGRES_PASSWORD', 'test');
   vi.stubEnv('POSTGRES_DB', 'test');
   vi.stubEnv('CORS_ORIGIN', 'http://localhost:3000');
+  vi.stubEnv('BETTER_AUTH_SECRET', 'better-auth-test-secret-0123456789abcdef');
+  vi.stubEnv('BETTER_AUTH_URL', 'http://localhost:3000');
+  vi.stubEnv('PASSWORD_PEPPER', 'better-auth-test-pepper-0123456789abcdef');
+  vi.stubEnv('GOOGLE_ENABLE', 'false');
   vi.stubEnv('SENTRY_DSN', 'https://public@sentry.invalid/1');
   const { AppModule } = await import('@/main/app.module.js');
 
@@ -41,5 +45,12 @@ describe('AppModule', () => {
       timestamp: expect.any(String),
       path: '/route-that-does-not-exist',
     });
+  });
+
+  it('should hand the Better Auth routes to Better Auth', async () => {
+    const response = await fetch(`${baseUrl}/api/auth/ok`);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true });
   });
 });

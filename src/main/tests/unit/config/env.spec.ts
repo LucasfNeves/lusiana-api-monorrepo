@@ -10,7 +10,20 @@ const VALID_CONFIG = {
   POSTGRES_PASSWORD: 'secret',
   POSTGRES_DB: 'lusiana',
   CORS_ORIGIN: 'https://loja.lusiana.com.br',
+  BETTER_AUTH_SECRET: 'better-auth-test-secret-0123456789abcdef',
+  BETTER_AUTH_URL: 'https://api.lusiana.com.br',
+  PASSWORD_PEPPER: 'better-auth-test-pepper-0123456789abcdef',
+  GOOGLE_ENABLE: 'true',
+  GOOGLE_CLIENT_ID: 'google-client-id.apps.googleusercontent.com',
+  GOOGLE_CLIENT_SECRET: 'google-client-secret',
   SENTRY_DSN: 'https://public-key@o1.ingest.sentry.io/42',
+};
+
+const VALIDATED_CONFIG = {
+  ...VALID_CONFIG,
+  PORT: 4001,
+  POSTGRES_PORT: 5499,
+  GOOGLE_ENABLE: true,
 };
 
 const VARIABLES = Object.keys(VALID_CONFIG);
@@ -24,7 +37,7 @@ afterEach(() => {
 });
 
 describe('validate', () => {
-  it('should return every variable with the ports converted to numbers', () => {
+  it('should return every variable with the ports as numbers and GOOGLE_ENABLE as a boolean', () => {
     const validatedConfig = validate(VALID_CONFIG);
 
     expect(validatedConfig).toEqual({
@@ -36,6 +49,12 @@ describe('validate', () => {
       POSTGRES_PASSWORD: 'secret',
       POSTGRES_DB: 'lusiana',
       CORS_ORIGIN: 'https://loja.lusiana.com.br',
+      BETTER_AUTH_SECRET: 'better-auth-test-secret-0123456789abcdef',
+      BETTER_AUTH_URL: 'https://api.lusiana.com.br',
+      PASSWORD_PEPPER: 'better-auth-test-pepper-0123456789abcdef',
+      GOOGLE_ENABLE: true,
+      GOOGLE_CLIENT_ID: 'google-client-id.apps.googleusercontent.com',
+      GOOGLE_CLIENT_SECRET: 'google-client-secret',
       SENTRY_DSN: 'https://public-key@o1.ingest.sentry.io/42',
     });
   });
@@ -51,8 +70,8 @@ describe('validate', () => {
     const validatedConfig = validate(config);
 
     expect(validatedConfig).toEqual({
-      ...VALID_CONFIG,
-      PORT: 3003,
+      ...VALIDATED_CONFIG,
+      PORT: 3000,
       POSTGRES_PORT: 5435,
       CORS_ORIGIN: 'http://localhost:3000',
     });
@@ -70,10 +89,9 @@ describe('validate', () => {
     const validatedConfig = validate(config);
 
     expect(validatedConfig).toEqual({
-      ...VALID_CONFIG,
+      ...VALIDATED_CONFIG,
       DATABASE_URL: 'postgresql://from-process-env',
       PORT: 4000,
-      POSTGRES_PORT: 5499,
     });
   });
 
@@ -105,6 +123,10 @@ describe('validate', () => {
     { variable: 'POSTGRES_USER' },
     { variable: 'POSTGRES_PASSWORD' },
     { variable: 'POSTGRES_DB' },
+    { variable: 'BETTER_AUTH_SECRET' },
+    { variable: 'BETTER_AUTH_URL' },
+    { variable: 'PASSWORD_PEPPER' },
+    { variable: 'GOOGLE_ENABLE' },
   ])('should throw naming $variable when it is missing', ({ variable }) => {
     const config = { ...VALID_CONFIG, [variable]: undefined };
 
@@ -124,6 +146,17 @@ describe('validate', () => {
       value: 'http://public-key@o1.ingest.sentry.io/42',
     },
     { variable: 'SENTRY_DSN', value: 'not-a-url' },
+    {
+      variable: 'BETTER_AUTH_SECRET',
+      value: 'thirty-one-characters-long-0123',
+    },
+    { variable: 'BETTER_AUTH_URL', value: 'not-a-url' },
+    { variable: 'BETTER_AUTH_URL', value: 'api.lusiana.com.br' },
+    { variable: 'BETTER_AUTH_URL', value: 'ftp://api.lusiana.com.br' },
+    { variable: 'PASSWORD_PEPPER', value: 'thirty-one-characters-long-0123' },
+    { variable: 'GOOGLE_ENABLE', value: 'yes' },
+    { variable: 'GOOGLE_ENABLE', value: '1' },
+    { variable: 'GOOGLE_ENABLE', value: 'TRUE' },
   ])(
     'should throw naming $variable when its value is $value',
     ({ variable, value }) => {
@@ -132,6 +165,57 @@ describe('validate', () => {
       expect(() => validate(config)).toThrow(`property ${variable} has failed`);
     },
   );
+
+  it.each([
+    { variable: 'GOOGLE_CLIENT_ID', value: undefined },
+    { variable: 'GOOGLE_CLIENT_ID', value: '' },
+    { variable: 'GOOGLE_CLIENT_SECRET', value: undefined },
+    { variable: 'GOOGLE_CLIENT_SECRET', value: '' },
+  ])(
+    'should throw naming $variable when Google is enabled and it is $value',
+    ({ variable, value }) => {
+      const config = { ...VALID_CONFIG, [variable]: value };
+
+      expect(() => validate(config)).toThrow(`property ${variable} has failed`);
+    },
+  );
+
+  it('should accept Google disabled without its client id and secret', () => {
+    const config = {
+      ...VALID_CONFIG,
+      GOOGLE_ENABLE: 'false',
+      GOOGLE_CLIENT_ID: '',
+      GOOGLE_CLIENT_SECRET: undefined,
+    };
+
+    const validatedConfig = validate(config);
+
+    expect(validatedConfig).toEqual({
+      ...VALIDATED_CONFIG,
+      GOOGLE_ENABLE: false,
+      GOOGLE_CLIENT_ID: undefined,
+      GOOGLE_CLIENT_SECRET: undefined,
+    });
+  });
+
+  it.each([
+    {
+      case: 'a 32-character secret',
+      variable: 'BETTER_AUTH_SECRET',
+      value: 'thirty-two-characters-long-01234',
+    },
+    {
+      case: 'a localhost URL',
+      variable: 'BETTER_AUTH_URL',
+      value: 'http://localhost:3000',
+    },
+  ])('should accept $case', ({ variable, value }) => {
+    const config = { ...VALID_CONFIG, [variable]: value };
+
+    const validatedConfig = validate(config);
+
+    expect(validatedConfig).toEqual({ ...VALIDATED_CONFIG, [variable]: value });
+  });
 
   it.each([
     { port: '0', expected: 0 },

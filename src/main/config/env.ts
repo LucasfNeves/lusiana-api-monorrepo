@@ -1,5 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import {
+  IsBoolean,
   IsIn,
   IsNotEmpty,
   IsNumber,
@@ -8,6 +9,8 @@ import {
   IsUrl,
   Max,
   Min,
+  MinLength,
+  ValidateIf,
   validateSync,
 } from 'class-validator';
 
@@ -52,6 +55,34 @@ class EnvironmentVariables {
   @IsNotEmpty()
   CORS_ORIGIN: string;
 
+  @IsString()
+  @MinLength(32)
+  BETTER_AUTH_SECRET: string;
+
+  @IsUrl({
+    protocols: ['http', 'https'],
+    require_protocol: true,
+    require_tld: false,
+  })
+  BETTER_AUTH_URL: string;
+
+  @IsString()
+  @MinLength(32)
+  PASSWORD_PEPPER: string;
+
+  @IsBoolean()
+  GOOGLE_ENABLE: boolean;
+
+  @ValidateIf((env: EnvironmentVariables) => env.GOOGLE_ENABLE)
+  @IsString()
+  @IsNotEmpty()
+  GOOGLE_CLIENT_ID?: string;
+
+  @ValidateIf((env: EnvironmentVariables) => env.GOOGLE_ENABLE)
+  @IsString()
+  @IsNotEmpty()
+  GOOGLE_CLIENT_SECRET?: string;
+
   @IsOptional()
   @IsUrl({ protocols: ['https'], require_protocol: true })
   SENTRY_DSN?: string;
@@ -60,7 +91,7 @@ class EnvironmentVariables {
 export function validate(config: Record<string, unknown>) {
   const validatedConfig = plainToInstance(EnvironmentVariables, {
     NODE_ENV: config.NODE_ENV ?? process.env.NODE_ENV,
-    PORT: Number(config.PORT ?? process.env.PORT ?? 3003),
+    PORT: Number(config.PORT ?? process.env.PORT ?? 3000),
     POSTGRES_PORT: Number(
       config.POSTGRES_PORT ?? process.env.POSTGRES_PORT ?? 5435,
     ),
@@ -71,6 +102,18 @@ export function validate(config: Record<string, unknown>) {
     POSTGRES_DB: config.POSTGRES_DB ?? process.env.POSTGRES_DB,
     CORS_ORIGIN:
       config.CORS_ORIGIN ?? process.env.CORS_ORIGIN ?? 'http://localhost:3000',
+    BETTER_AUTH_SECRET:
+      config.BETTER_AUTH_SECRET ?? process.env.BETTER_AUTH_SECRET,
+    BETTER_AUTH_URL: config.BETTER_AUTH_URL ?? process.env.BETTER_AUTH_URL,
+    PASSWORD_PEPPER: config.PASSWORD_PEPPER ?? process.env.PASSWORD_PEPPER,
+    GOOGLE_ENABLE: _toBoolean(
+      config.GOOGLE_ENABLE ?? process.env.GOOGLE_ENABLE,
+    ),
+    GOOGLE_CLIENT_ID:
+      (config.GOOGLE_CLIENT_ID ?? process.env.GOOGLE_CLIENT_ID) || undefined,
+    GOOGLE_CLIENT_SECRET:
+      (config.GOOGLE_CLIENT_SECRET ?? process.env.GOOGLE_CLIENT_SECRET) ||
+      undefined,
     SENTRY_DSN: (config.SENTRY_DSN ?? process.env.SENTRY_DSN) || undefined,
   });
 
@@ -83,4 +126,17 @@ export function validate(config: Record<string, unknown>) {
   }
 
   return validatedConfig;
+}
+
+// Qualquer outro valor segue como veio, para o @IsBoolean recusá-lo com o nome da variável.
+function _toBoolean(value: unknown): unknown {
+  if (value === 'true') {
+    return true;
+  }
+
+  if (value === 'false') {
+    return false;
+  }
+
+  return value;
 }
