@@ -16,6 +16,8 @@ const VALID_CONFIG = {
   GOOGLE_ENABLE: 'true',
   GOOGLE_CLIENT_ID: 'google-client-id.apps.googleusercontent.com',
   GOOGLE_CLIENT_SECRET: 'google-client-secret',
+  AWS_REGION: 'sa-east-1',
+  EMAIL_FROM: 'contato@lusiana.com.br',
   SENTRY_DSN: 'https://public-key@o1.ingest.sentry.io/42',
 };
 
@@ -55,6 +57,8 @@ describe('validate', () => {
       GOOGLE_ENABLE: true,
       GOOGLE_CLIENT_ID: 'google-client-id.apps.googleusercontent.com',
       GOOGLE_CLIENT_SECRET: 'google-client-secret',
+      AWS_REGION: 'sa-east-1',
+      EMAIL_FROM: 'contato@lusiana.com.br',
       SENTRY_DSN: 'https://public-key@o1.ingest.sentry.io/42',
     });
   });
@@ -127,6 +131,8 @@ describe('validate', () => {
     { variable: 'BETTER_AUTH_URL' },
     { variable: 'PASSWORD_PEPPER' },
     { variable: 'GOOGLE_ENABLE' },
+    { variable: 'AWS_REGION' },
+    { variable: 'EMAIL_FROM' },
   ])('should throw naming $variable when it is missing', ({ variable }) => {
     const config = { ...VALID_CONFIG, [variable]: undefined };
 
@@ -154,6 +160,8 @@ describe('validate', () => {
     { variable: 'BETTER_AUTH_URL', value: 'api.lusiana.com.br' },
     { variable: 'BETTER_AUTH_URL', value: 'ftp://api.lusiana.com.br' },
     { variable: 'PASSWORD_PEPPER', value: 'thirty-one-characters-long-0123' },
+    { variable: 'EMAIL_FROM', value: 'contato' },
+    { variable: 'EMAIL_FROM', value: 'contato@' },
     { variable: 'GOOGLE_ENABLE', value: 'yes' },
     { variable: 'GOOGLE_ENABLE', value: '1' },
     { variable: 'GOOGLE_ENABLE', value: 'TRUE' },

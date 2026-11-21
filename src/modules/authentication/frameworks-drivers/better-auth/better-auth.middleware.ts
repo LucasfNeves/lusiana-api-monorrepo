@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { Inject, Injectable, type NestMiddleware } from '@nestjs/common';
 import { toNodeHandler } from 'better-auth/node';
-import { BETTER_AUTH, type BetterAuth } from './better-auth.config.js';
+import { BETTER_AUTH, type BetterAuth } from './better-auth.types.js';
 
 @Injectable()
 export class BetterAuthMiddleware implements NestMiddleware {

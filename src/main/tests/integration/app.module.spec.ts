@@ -19,6 +19,8 @@ beforeAll(async () => {
   vi.stubEnv('BETTER_AUTH_URL', 'http://localhost:3000');
   vi.stubEnv('PASSWORD_PEPPER', 'better-auth-test-pepper-0123456789abcdef');
   vi.stubEnv('GOOGLE_ENABLE', 'false');
+  vi.stubEnv('AWS_REGION', 'sa-east-1');
+  vi.stubEnv('EMAIL_FROM', 'contato@lusiana.com.br');
   vi.stubEnv('SENTRY_DSN', 'https://public@sentry.invalid/1');
   const { AppModule } = await import('@/main/app.module.js');
 

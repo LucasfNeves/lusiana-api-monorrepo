@@ -1,6 +1,7 @@
 import { plainToInstance } from 'class-transformer';
 import {
   IsBoolean,
+  IsEmail,
   IsIn,
   IsNotEmpty,
   IsNumber,
@@ -83,6 +84,13 @@ class EnvironmentVariables {
   @IsNotEmpty()
   GOOGLE_CLIENT_SECRET?: string;
 
+  @IsString()
+  @IsNotEmpty()
+  AWS_REGION: string;
+
+  @IsEmail()
+  EMAIL_FROM: string;
+
   @IsOptional()
   @IsUrl({ protocols: ['https'], require_protocol: true })
   SENTRY_DSN?: string;
@@ -114,6 +122,8 @@ export function validate(config: Record<string, unknown>) {
     GOOGLE_CLIENT_SECRET:
       (config.GOOGLE_CLIENT_SECRET ?? process.env.GOOGLE_CLIENT_SECRET) ||
       undefined,
+    AWS_REGION: config.AWS_REGION ?? process.env.AWS_REGION,
+    EMAIL_FROM: config.EMAIL_FROM ?? process.env.EMAIL_FROM,
     SENTRY_DSN: (config.SENTRY_DSN ?? process.env.SENTRY_DSN) || undefined,
   });
 

@@ -26,4 +26,8 @@ export default () => ({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
     },
   },
+  email: {
+    region: process.env.AWS_REGION,
+    from: process.env.EMAIL_FROM,
+  },
 });

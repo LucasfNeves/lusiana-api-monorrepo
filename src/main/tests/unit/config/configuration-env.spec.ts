@@ -30,6 +30,8 @@ describe('configurationEnv', () => {
       'google-client-id.apps.googleusercontent.com',
     );
     vi.stubEnv('GOOGLE_CLIENT_SECRET', 'google-client-secret');
+    vi.stubEnv('AWS_REGION', 'sa-east-1');
+    vi.stubEnv('EMAIL_FROM', 'contato@lusiana.com.br');
 
     const configuration = configurationEnv();
 
@@ -57,6 +59,10 @@ describe('configurationEnv', () => {
           clientId: 'google-client-id.apps.googleusercontent.com',
           clientSecret: 'google-client-secret',
         },
+      },
+      email: {
+        region: 'sa-east-1',
+        from: 'contato@lusiana.com.br',
       },
     });
   });
