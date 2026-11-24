@@ -29,7 +29,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         with:
           version: 11
 
@@ -57,6 +57,6 @@ jobs:
 
       # Lê o coverage/lcov.info gerado pelo validate; a configuração fica em sonar-project.properties.
       - name: SonarQube Cloud scan
-        uses: SonarSource/sonarqube-scan-action@v8.5.1
+        uses: SonarSource/sonarqube-scan-action@70bad232163b09d998ea0707ee80c0ec80798c16 # v8.5.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
